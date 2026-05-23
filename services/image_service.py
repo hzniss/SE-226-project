@@ -43,13 +43,13 @@ def generate_cover_image(cover_prompt: str, genre: str) -> Optional[Image.Image]
         image = Image.open(io.BytesIO(response.content)).convert("RGB")
         return image
     except requests.exceptions.Timeout:
-        print("[image_service] Timeout: Pollinations yanıt vermedi.")
+        print("[image_service] Timeout: Pollinations didn't respond.")
         return None
     except requests.exceptions.RequestException as e:
-        print(f"[image_service] İstek hatası: {e}")
+        print(f"[image_service] Request error: {e}")
         return None
     except Exception as e:
-        print(f"[image_service] Görsel işleme hatası: {e}")
+        print(f"[image_service] Image processing error: {e}")
         return None
 
 

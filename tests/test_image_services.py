@@ -7,7 +7,7 @@ sys.path.insert(0, str(ROOT))
 
 from services.image_service import get_album_cover, get_album_cover_from_data
 
-# Beyza hazır olunca gerçek çıktı bu yapıda gelecek
+# When Beyza is ready, the real output will be in this format
 MOCK_ALBUM_DATA = {
     "album_name": "Midnight Echoes",
     "artist_name": "Luna Vale",

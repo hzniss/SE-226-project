@@ -10,11 +10,16 @@ class ResultPanel(tk.Frame):
         stage = tk.Frame(self, bg="#EEEFE0")
         stage.pack(expand=True, fill="both", padx=60, pady=40)
         
-        #placeholder for album cover
+        # album cover (Can layout + Irmak set_cover_image)
         cover_placeholder = tk.Frame(stage, bg="#D1D8BE", width=300, height=300)
         cover_placeholder.pack(side="left", padx=(0, 50))
         cover_placeholder.pack_propagate(False)
-        tk.Label(cover_placeholder, text="[ COVER IMAGE ]", bg="#D1D8BE", fg="#819A91", font=("Arial", 12, "bold")).pack(expand=True)
+        self.cover_label = tk.Label(
+            cover_placeholder, text="[ COVER IMAGE ]", bg="#D1D8BE", fg="#819A91",
+            font=("Arial", 12, "bold"),
+        )
+        self.cover_label.pack(expand=True)
+        self._cover_photo = None
         
         #placeholder for tracks
         tracklist_container = tk.Frame(stage, bg="#EEEFE0")
@@ -32,3 +37,9 @@ class ResultPanel(tk.Frame):
             col = 0 if i <= 5 else 1
             row = (i - 1) % 5
             tk.Label(tracks_frame, text=f"{i}. Song Title Placeholder", bg="#EEEFE0", fg="#819A91", font=("Arial", 11)).grid(row=row, column=col, sticky="w", pady=8)
+
+    def set_cover_image(self, pil_image):
+        """Arda workflow thread sonrası root.after ile çağırmalı."""
+        from services.image_service import pil_to_tkinter
+        self._cover_photo = pil_to_tkinter(pil_image, size=(300, 300))
+        self.cover_label.configure(image=self._cover_photo, text="")

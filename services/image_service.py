@@ -1,7 +1,9 @@
+import io
+from typing import Optional
+from urllib.parse import quote
+
 import requests
 from PIL import Image
-import io
-from urllib.parse import quote
 
 
 GENRE_STYLES = {
@@ -19,15 +21,18 @@ GENRE_STYLES = {
 
 POLLINATIONS_BASE = "https://image.pollinations.ai/prompt/"
 
+# JSON key for the cover prompt in Gemini album metadata (see gemini_service).
+COVER_PROMPT_KEY = "cover_prompt"
 
+
+# Combines Gemini's cover prompt with the selected genre's visual style.
 def build_full_prompt(cover_prompt: str, genre: str) -> str:
-
     style = GENRE_STYLES.get(genre, "artistic album cover")
     return f"{cover_prompt}, {style}, square format, high quality"
 
 
-def generate_cover_image(cover_prompt: str, genre: str) -> Image.Image:
-
+# Fetches album cover art from Pollinations.ai. Returns None on network or parse errors.
+def generate_cover_image(cover_prompt: str, genre: str) -> Optional[Image.Image]:
     full_prompt = build_full_prompt(cover_prompt, genre)
     encoded = quote(full_prompt)
     url = f"{POLLINATIONS_BASE}{encoded}?width=600&height=600&nologo=true"
@@ -48,12 +53,27 @@ def generate_cover_image(cover_prompt: str, genre: str) -> Image.Image:
         return None
 
 
-def get_placeholder_image(size: tuple = (600, 600)) -> Image.Image:
+# Main entry point for workflow/GUI. Always returns a PIL Image (real cover or placeholder).
+def get_album_cover(cover_prompt: str, genre: str) -> Image.Image:
+    if not cover_prompt or not str(cover_prompt).strip():
+        return get_placeholder_image()
+    image = generate_cover_image(str(cover_prompt).strip(), genre)
+    return image if image is not None else get_placeholder_image()
 
+
+# Builds cover from parsed Gemini metadata and the genre selected in the GUI.
+def get_album_cover_from_data(album_data: dict, genre: str) -> Image.Image:
+    cover_prompt = album_data.get(COVER_PROMPT_KEY, "")
+    return get_album_cover(cover_prompt, genre)
+
+
+# Returns a neutral gray image when generation fails or the prompt is empty.
+def get_placeholder_image(size: tuple = (600, 600)) -> Image.Image:
     img = Image.new("RGB", size, color=(40, 40, 40))
     return img
 
 
+# Resizes a PIL image and converts it to a Tkinter PhotoImage for display.
 def pil_to_tkinter(image: Image.Image, size: tuple = (300, 300)):
     from PIL import ImageTk
     image_resized = image.resize(size, Image.LANCZOS)

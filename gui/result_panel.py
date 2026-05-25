@@ -38,8 +38,12 @@ class ResultPanel(tk.Frame):
             row = (i - 1) % 5
             tk.Label(tracks_frame, text=f"{i}. Song Title Placeholder", bg="#EEEFE0", fg="#819A91", font=("Arial", 11)).grid(row=row, column=col, sticky="w", pady=8)
 
+    # Call from main thread after cover generation (e.g. root.after from workflow).
     def set_cover_image(self, pil_image):
-        """Arda workflow thread sonrası root.after ile çağırmalı."""
         from services.image_service import pil_to_tkinter
         self._cover_photo = pil_to_tkinter(pil_image, size=(300, 300))
         self.cover_label.configure(image=self._cover_photo, text="")
+
+    def clear_cover_image(self):
+        self._cover_photo = None
+        self.cover_label.configure(image="", text="[ COVER IMAGE ]")

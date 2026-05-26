@@ -9,10 +9,11 @@ REQ 5: Gemini'den gelen Last.fm tag'leri kullanılarak gerçek şarkılar çekil
 """
 
 import requests
+from config import LASTFM_API_KEY
 
 
 LASTFM_BASE_URL = "https://ws.audioscrobbler.com/2.0/"
-LASTFM_API_KEY  = "54824551b8051a9c61224a773a850084" 
+
 
 
 # TEK TAG İÇİN ŞARKI ÇEKME

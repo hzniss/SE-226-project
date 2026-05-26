@@ -3,4 +3,5 @@ __pycache__/
 .venv/
 .idea/
 test_cover.png
+config.py
 test_export/

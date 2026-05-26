@@ -220,9 +220,9 @@ def generate_album_metadata(
 # ─────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import os
-
-    api_key = os.environ.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY_HERE")
+    import sys, os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from config import GEMINI_API_KEY as api_key
     configure_gemini(api_key)
 
     test_journal = (

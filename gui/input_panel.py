@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+import gemini_service
 
 class InputPanel(tk.Frame):
     def __init__(self, parent):
@@ -14,18 +15,18 @@ class InputPanel(tk.Frame):
         lbl_style = {"bg": "#D1D8BE", "fg": "#819A91", "font": ("Arial", 9, "bold")}
         
         tk.Label(settings_frame, text="Genre", **lbl_style).grid(row=0, column=0, sticky="w", pady=(0, 5))
-        self.genre_combo = ttk.Combobox(settings_frame, values=["Classical", "Rock", "Pop", "Jazz"], state="readonly", width=12)
+        self.genre_combo = ttk.Combobox(settings_frame, values=["Pop", "Rock", "Hip-Hop / Rap", "Electronic", "Indie", "R&B / Soul" , "Jazz", "Metal", "Türk Pop", "Klasik"], state="readonly", width=12)
         self.genre_combo.set("Classical")
         self.genre_combo.grid(row=0, column=1, sticky="w", pady=(0, 5), padx=(5, 0))
 
         tk.Label(settings_frame, text="Era", **lbl_style).grid(row=1, column=0, sticky="w", pady=(0, 5))
-        self.era_combo = ttk.Combobox(settings_frame, values=["1980s", "1990s", "2000s"], state="readonly", width=12)
+        self.era_combo = ttk.Combobox(settings_frame, values=["1970s","1980s", "1990s", "2000s","2010s","2020s"], state="readonly", width=12)
         self.era_combo.set("2000s")
         self.era_combo.grid(row=1, column=1, sticky="w", pady=(0, 5), padx=(5, 0))
 
         tk.Label(settings_frame, text="Tracks", **lbl_style).grid(row=2, column=0, sticky="w")
-        self.track_spinbox = ttk.Spinbox(settings_frame, from_=1, to=20, width=10)
-        self.track_spinbox.set(10)
+        self.track_spinbox = ttk.Spinbox(settings_frame, from_=6, to=14, width=10)
+        self.track_spinbox.set(6)
         self.track_spinbox.grid(row=2, column=1, sticky="w", padx=(5, 0))
 
         #moodframe
@@ -47,3 +48,19 @@ class InputPanel(tk.Frame):
 
         self.generate_btn = ttk.Button(btn_frame, text="GENERATE\nALBUM", style="Generate.TButton")
         self.generate_btn.pack(fill="both", expand=True)
+    def get_journal_text(self):
+        return {
+            "journal_text": self.mood_text.get("1.0", "end").strip(),
+        }
+    def get_era(self):
+        return {
+            "era": self.era_combo.get(),
+        }
+    def get_genre(self):
+        return {
+            "genre": self.genre_combo.get(),
+        }
+    def get_track_count(self):
+        return {
+            "track_count": int(self.track_spinbox.get()),
+        }

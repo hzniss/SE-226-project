@@ -15,6 +15,7 @@ try:
 except ImportError:
     from input_panel import InputPanel
     from result_panel import ResultPanel
+from utils.threading_helper import WorkerThread
 
 
 class App(tk.Tk):
@@ -56,19 +57,22 @@ class App(tk.Tk):
         self.input_panel.set_export_enabled(False)
         self.result_panel.set_loading(True)
 
-        def worker():
-            try:
-                album_data, cover = generate_full_album(
-                    journal_text=inputs["journal_text"],
-                    genre=inputs["genre"],
-                    era=inputs["era"],
-                    track_count=inputs["track_count"],
-                )
-                self.after(0, lambda: self._on_generate_success(album_data, cover))
-            except Exception as e:
-                self.after(0, lambda: self._on_generate_error(str(e)))
-
-        threading.Thread(target=worker, daemon=True).start()
+        # Uzun süren albüm üretimini arka plan thread'inde çalıştır (REQ 9).
+        # WorkerThread; success/error/status callback'lerini root.after() ile
+        # ana thread'e taşır, böylece GUI donmaz ve thread-safe kalır.
+        WorkerThread(
+            root=self,
+            target=generate_full_album,
+            kwargs={
+                "journal_text": inputs["journal_text"],
+                "genre": inputs["genre"],
+                "era": inputs["era"],
+                "track_count": inputs["track_count"],
+            },
+            on_success=lambda result: self._on_generate_success(*result),
+            on_error=lambda e: self._on_generate_error(str(e)),
+            on_status=self._on_status_update,
+        ).start()
 
     def _on_generate_success(self, album_data: dict, cover):
         self._last_album_data = album_data
@@ -101,6 +105,14 @@ class App(tk.Tk):
     def _finish_generation(self):
         self._generation_running = False
         self.input_panel.set_busy(False)
+
+    def _on_status_update(self, message: str):
+        """
+        WorkerThread tarafından (root.after üzerinden) ana thread'de çağrılır.
+        Mevcut adımı status label'da gösterir: "Gemini is thinking...",
+        "Fetching tracks...", "Generating cover..." (REQ 9).
+        """
+        self.result_panel.status_label.configure(text=message)
 
     def _on_export(self):
         if not self._last_album_data or not self._last_cover:

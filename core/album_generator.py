@@ -8,7 +8,7 @@ Bu modül app.py içindeki WorkerThread tarafından arka plan thread'inde çağr
 
 from PIL import Image
 
-import gemini_service
+from services import gemini_service
 from services.image_service import get_album_cover_from_data
 from services.lastfm_service import build_tracklist
 

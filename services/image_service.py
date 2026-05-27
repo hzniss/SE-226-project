@@ -52,7 +52,6 @@ def build_full_prompt(cover_prompt: str, genre: str) -> str:
     style = GENRE_STYLES.get(normalize_genre(genre), "artistic album cover")
     return f"{cover_prompt}, {style}, square format, high quality"
 
-
 # Fetches album cover art from Pollinations.ai. Returns None on network or parse errors.
 def generate_cover_image(cover_prompt: str, genre: str) -> Optional[Image.Image]:
     full_prompt = build_full_prompt(cover_prompt, genre)

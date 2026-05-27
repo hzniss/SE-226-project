@@ -4,7 +4,7 @@ import os
 
 def configure_app() -> None:
     """Load API keys from config.py and/or environment variables."""
-    import gemini_service
+    from services import gemini_service
 
     gemini_key = os.environ.get("GEMINI_API_KEY")
     try:

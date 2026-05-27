@@ -56,7 +56,7 @@ def generate_full_album(
     # 2) Tag'lerden gerçek şarkılarla tracklist oluştur (REQ 1, REQ 5)
     _status("Fetching tracks...")
     tags = album_data.get("lastfm_tags") or []
-    album_data["tracks"] = build_tracklist(tags, track_count)
+    album_data["tracks"] = build_tracklist(tags, track_count, genre=genre)
 
     # 3) Kapak görselini üret (REQ 6)
     _status("Generating cover...")

@@ -13,12 +13,13 @@ from config import LASTFM_API_KEY
 
 
 LASTFM_BASE_URL = "https://ws.audioscrobbler.com/2.0/"
+MAX_TAG_PAGES = 5
 
 
 
 # TEK TAG İÇİN ŞARKI ÇEKME
 
-def fetch_tracks_by_tag(tag: str, limit: int = 20) -> list[dict]:
+def fetch_tracks_by_tag(tag: str, limit: int = 50, page: int = 1) -> list[dict]:
     """
     Belirtilen tag için Last.fm tag.gettoptracks endpoint'ini çağırır.
     Her şarkı için {'title', 'artist', 'url'} anahtarlarını içeren
@@ -28,7 +29,8 @@ def fetch_tracks_by_tag(tag: str, limit: int = 20) -> list[dict]:
     Parametreler
     ------------
     tag   : Last.fm tag string'i (örn. "melancholy", "rainy day")
-    limit : Bu tag için istenen maksimum şarkı sayısı (varsayılan: 20)
+    limit : Bu tag için istenen maksimum şarkı sayısı
+    page  : Last.fm sonuç sayfası
 
     Dönen değer
     -----------
@@ -38,6 +40,7 @@ def fetch_tracks_by_tag(tag: str, limit: int = 20) -> list[dict]:
         "method":  "tag.gettoptracks",
         "tag":     tag,
         "limit":   limit,
+        "page":    page,
         "api_key": LASTFM_API_KEY,
         "format":  "json",
     }
@@ -95,7 +98,27 @@ def fetch_tracks_by_tag(tag: str, limit: int = 20) -> list[dict]:
 # BİRDEN FAZLA TAG'DEN TRACKLIST OLUŞTURMA
 
 
-def build_tracklist(tags: list[str], track_count: int) -> list[dict]:
+def _normalize_tag(tag: str) -> str:
+    return " ".join((tag or "").strip().lower().replace("/", " ").split())
+
+
+def _derive_fallback_tags(genre: str) -> list[str]:
+    normalized = _normalize_tag(genre)
+    if not normalized:
+        return []
+
+    fallbacks = [normalized]
+    fallback_map = {
+        "hip hop rap": ["hip hop", "rap"],
+        "r&b soul": ["r&b", "soul"],
+        "turk pop": ["turkish pop", "pop"],
+        "klasik": ["classical"],
+    }
+    fallbacks.extend(fallback_map.get(normalized, []))
+    return fallbacks
+
+
+def build_tracklist(tags: list[str], track_count: int, genre: str = "") -> list[dict]:
     """
     Gemini'den gelen tag listesindeki her tag için Last.fm'den şarkı çeker,
     sonuçları birleştirir, duplicate'leri temizler ve
@@ -103,42 +126,60 @@ def build_tracklist(tags: list[str], track_count: int) -> list[dict]:
 
     Duplicate tespiti: "title — artist" çifti büyük/küçük harf duyarsız olarak karşılaştırılır.
 
-    Eğer tüm tag'lerden toplanan benzersiz şarkı sayısı track_count'tan azsa,
-    mevcut tüm benzersiz şarkılar döner (uygulama hata vermez).
-
     Parametreler
     ------------
     tags        : Gemini'nin ürettiği Last.fm tag string'lerinin listesi
     track_count : Kullanıcının seçtiği şarkı sayısı (6-14 arası)
+    genre       : Gerekirse fallback tag üretmek için seçilen müzik türü
 
     Dönen değer
     -----------
     list[dict]  ->  track_count kadar {"title": "...", "artist": "...", "url": "..."} listesi
     """
-    if not tags:
+    normalized_tags = []
+    seen_tag_names = set()
+    for raw_tag in tags:
+        tag = _normalize_tag(raw_tag)
+        if tag and tag not in seen_tag_names:
+            seen_tag_names.add(tag)
+            normalized_tags.append(tag)
+
+    for fallback_tag in _derive_fallback_tags(genre):
+        if fallback_tag not in seen_tag_names:
+            seen_tag_names.add(fallback_tag)
+            normalized_tags.append(fallback_tag)
+
+    if not normalized_tags:
         return []
 
-    # Her tag için kaç şarkı isteyeceğimizi belirle.
-    # Daha fazla çekerek duplicate'lerden sonra yeterli şarkı kalsın.
-    per_tag_limit = max(20, track_count * 3)
+    per_tag_limit = max(50, track_count * 4)
+    seen_track_keys = set()
+    unique_tracks = []
 
-    all_tracks   = []   # Tüm tag'lerden ham şarkı listesi
-    seen_keys    = set()  # Duplicate kontrolü için "title|artist" küçük harf seti
-    unique_tracks = []   # Duplicate'ler temizlenmiş son liste
+    for page in range(1, MAX_TAG_PAGES + 1):
+        added_this_page = 0
 
-    for tag in tags:
-        fetched = fetch_tracks_by_tag(tag, limit=per_tag_limit)
-        all_tracks.extend(fetched)
+        for tag in normalized_tags:
+            fetched = fetch_tracks_by_tag(tag, limit=per_tag_limit, page=page)
+            for track in fetched:
+                key = f"{track['title'].lower()}|{track['artist'].lower()}"
+                if key in seen_track_keys:
+                    continue
 
-    # Duplicate filtreleme
-    for track in all_tracks:
-        # Karşılaştırma anahtarı: büyük/küçük harf duyarsız "başlık|sanatçı"
-        key = f"{track['title'].lower()}|{track['artist'].lower()}"
-        if key not in seen_keys:
-            seen_keys.add(key)
-            unique_tracks.append(track)
+                seen_track_keys.add(key)
+                unique_tracks.append(track)
+                added_this_page += 1
 
-    # İstenen sayıda şarkıyı döndür; yeterliyse kırp, değilse mevcut olanları ver
+                if len(unique_tracks) >= track_count:
+                    return unique_tracks[:track_count]
+
+        if added_this_page == 0:
+            break
+
+    print(
+        f"[LastFM] Only found {len(unique_tracks)} unique tracks "
+        f"for requested count {track_count}."
+    )
     return unique_tracks[:track_count]
 
 
@@ -148,7 +189,7 @@ def build_tracklist(tags: list[str], track_count: int) -> list[dict]:
 if __name__ == "__main__":
     # Hızlı smoke test — gerçek API key ile çalışır
     test_tags = ["melancholy", "rainy day", "indie"]
-    result = build_tracklist(test_tags, track_count=8)
+    result = build_tracklist(test_tags, track_count=8, genre="Indie")
 
     print(f"\n{'─'*50}")
     print(f"  {len(result)} şarkı döndü")

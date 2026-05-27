@@ -1,4 +1,6 @@
 import tkinter as tk
+import webbrowser
+from tkinter import ttk
 
 MAX_TRACKS = 14
 
@@ -6,6 +8,20 @@ MAX_TRACKS = 14
 class ResultPanel(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="#EEEFE0")
+
+        style = ttk.Style(self)
+        style.configure(
+            "Listen.TButton",
+            background="#A7C1A8",
+            foreground="#ffffff",
+            font=("Arial", 9, "bold"),
+            padding=(10, 3),
+        )
+        style.map(
+            "Listen.TButton",
+            background=[("active", "#819A91"), ("pressed", "#819A91")],
+            foreground=[("active", "#ffffff"), ("pressed", "#ffffff")],
+        )
 
         tk.Label(
             self,
@@ -64,13 +80,13 @@ class ResultPanel(tk.Frame):
 
         tracks_frame = tk.Frame(tracklist_container, bg="#EEEFE0")
         tracks_frame.pack(fill="both", expand=True)
-        tracks_frame.columnconfigure(0, weight=1)
-        tracks_frame.columnconfigure(1, weight=1)
+        tracks_frame.columnconfigure(0, weight=1)  # title/artist
+        tracks_frame.columnconfigure(1, weight=0)  # Listen button
 
         self.track_labels: list[tk.Label] = []
+        self.track_buttons: list[ttk.Button] = []
         for i in range(1, MAX_TRACKS + 1):
-            col = 0 if i <= 7 else 1
-            row = (i - 1) % 7
+            row = i - 1
             label = tk.Label(
                 tracks_frame,
                 text="",
@@ -79,14 +95,28 @@ class ResultPanel(tk.Frame):
                 font=("Arial", 11),
                 anchor="w",
             )
-            label.grid(row=row, column=col, sticky="w", pady=6, padx=(0, 12))
+            label.grid(row=row, column=0, sticky="w", pady=4, padx=(0, 8))
             self.track_labels.append(label)
+
+            btn = ttk.Button(
+                tracks_frame,
+                text="Listen",
+                style="Listen.TButton",
+                command=lambda url=None: self._open_track_url(url),
+            )
+            btn.grid(row=row, column=1, sticky="e", pady=4, padx=(0, 0))
+            btn.configure(state="disabled")
+            btn.grid_remove()
+            self.track_buttons.append(btn)
 
         self._show_empty_tracklist()
 
     def _show_empty_tracklist(self):
         for i, label in enumerate(self.track_labels, start=1):
             label.configure(text=f"{i}. —", fg="#c0c8b8")
+        for btn in self.track_buttons:
+            btn.configure(state="disabled", command=lambda url=None: self._open_track_url(url))
+            btn.grid_remove()
 
     def set_album_metadata(self, album_data: dict):
         name = album_data.get("album_name") or "Unknown Album"
@@ -106,14 +136,26 @@ class ResultPanel(tk.Frame):
             self.status_label.configure(text="")
 
     def set_tracklist(self, tracks: list[dict]):
-        for i, widget in enumerate(self.track_labels):
+        for i, (label, btn) in enumerate(zip(self.track_labels, self.track_buttons)):
             if i < len(tracks):
                 t = tracks[i]
                 title = t.get("title", "Unknown")
                 artist = t.get("artist", "Unknown")
-                widget.configure(text=f"{i + 1}. {title} — {artist}", fg="#819A91")
+                url = t.get("url") or ""
+                label.configure(text=f"{i + 1}. {title} — {artist}", fg="#819A91")
+                if url:
+                    btn.grid()
+                    btn.configure(
+                        state="normal",
+                        command=lambda u=url: self._open_track_url(u),
+                    )
+                else:
+                    btn.configure(state="disabled", command=lambda url=None: self._open_track_url(url))
+                    btn.grid_remove()
             else:
-                widget.configure(text="", fg="#819A91")
+                label.configure(text="", fg="#819A91")
+                btn.configure(state="disabled", command=lambda url=None: self._open_track_url(url))
+                btn.grid_remove()
 
     def set_cover_image(self, pil_image):
         from services.image_service import pil_to_tkinter
@@ -132,6 +174,9 @@ class ResultPanel(tk.Frame):
             self._cover_photo = None
             for i, widget in enumerate(self.track_labels, start=1):
                 widget.configure(text=f"{i}. …", fg="#a0a8a0")
+            for btn in self.track_buttons:
+                btn.configure(state="disabled", command=lambda url=None: self._open_track_url(url))
+                btn.grid_remove()
         else:
             if self.status_label.cget("text") == "Generating album… this may take a minute.":
                 self.status_label.configure(text="")
@@ -145,3 +190,12 @@ class ResultPanel(tk.Frame):
         self.status_label.configure(text="")
         self.clear_cover_image()
         self._show_empty_tracklist()
+
+    def _open_track_url(self, url: str | None):
+        if not url:
+            return
+        try:
+            webbrowser.open(url)
+        except Exception:
+            # Sessizce yut: en kötü ihtimalle buton çalışmaz, uygulama çökmez.
+            pass

@@ -32,10 +32,10 @@ print("Saved test_cover.png")
 empty_test = get_album_cover("", genre="Pop")
 print("Empty prompt -> placeholder:", empty_test.size)
 
-# GUI uses "Classical" until Can aligns combobox with PROJECT_GENRES
-prompt = build_full_prompt("sunset over the sea", normalize_genre("Classical"))
+# GUI now uses PROJECT_GENRES directly
+prompt = build_full_prompt("sunset over the sea", normalize_genre("Klasik"))
 assert "orchestral" in prompt.lower(), f"Expected Klasik style, got: {prompt}"
 
 alt_data = {"cover_image_prompt": "neon city skyline at night"}
 assert extract_cover_prompt(alt_data) == "neon city skyline at night"
-print("Genre alias + alternate cover key OK")
+print("Genre handling + alternate cover key OK")

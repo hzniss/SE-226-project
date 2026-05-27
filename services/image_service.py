@@ -31,20 +31,9 @@ POLLINATIONS_HEADERS = {"User-Agent": "AlbumCoverStudio/1.0"}
 COVER_PROMPT_KEY = "cover_prompt"
 COVER_PROMPT_ALT_KEYS = ("cover_image_prompt",)
 
-# Maps GUI labels to GENRE_STYLES keys until input_panel uses PROJECT_GENRES.
-GENRE_ALIASES = {
-    "Classical": "Klasik",
-    "classical": "Klasik",
-}
-
-
-# Maps GUI / workflow genre strings to GENRE_STYLES keys.
+# Normalizes GUI / workflow genre strings before style lookup.
 def normalize_genre(genre: str) -> str:
-    g = (genre or "").strip()
-    if not g:
-        return g
-    mapped = GENRE_ALIASES.get(g, g)
-    return mapped if mapped in GENRE_STYLES else g
+    return (genre or "").strip()
 
 
 # Reads cover prompt from Gemini album_data (supports alternate key names).

@@ -4,53 +4,32 @@ from urllib.parse import quote
 
 import requests
 from PIL import Image, ImageDraw
-
-# AGP2 genre list — GUI combobox values should match these keys exactly.
-PROJECT_GENRES = [
-    "Pop", "Rock", "Hip-Hop / Rap", "Electronic", "Indie",
-    "R&B / Soul", "Jazz", "Metal", "Türk Pop", "Klasik",
-]
-
-GENRE_STYLES = {
-    "Pop":         "vibrant colors, glossy aesthetic, modern pop album cover",
-    "Rock":        "dark tones, gritty texture, electric energy, rock album cover",
-    "Hip-Hop / Rap": "urban landscape, bold typography, street art style",
-    "Electronic":  "neon lights, futuristic, glitch art, digital aesthetic",
-    "Indie":       "lo-fi, warm film grain, vintage texture, indie aesthetic",
-    "R&B / Soul":  "smooth gradients, warm tones, soulful mood",
-    "Jazz":        "smoky atmosphere, noir lighting, classic jazz club feel",
-    "Metal":       "dark, aggressive, gothic elements, metal album art",
-    "Türk Pop":    "modern, colorful, Mediterranean warmth",
-    "Klasik":      "elegant, orchestral hall, timeless classical aesthetic",
-}
+from services.gemini_service import GENRE_STYLES
 
 POLLINATIONS_BASE = "https://image.pollinations.ai/prompt/"
 POLLINATIONS_HEADERS = {"User-Agent": "AlbumCoverStudio/1.0"}
 
 # Primary JSON key from gemini_service; alternates tried if missing.
 COVER_PROMPT_KEY = "cover_prompt"
-COVER_PROMPT_ALT_KEYS = ("cover_image_prompt",)
-
-# Normalizes GUI / workflow genre strings before style lookup.
-def normalize_genre(genre: str) -> str:
-    return (genre or "").strip()
 
 
-# Reads cover prompt from Gemini album_data (supports alternate key names).
+# Reads cover prompt from Gemini album_data.
 def extract_cover_prompt(album_data: dict) -> str:
     if not album_data:
         return ""
-    for key in (COVER_PROMPT_KEY,) + COVER_PROMPT_ALT_KEYS:
-        value = album_data.get(key, "")
-        if value and str(value).strip():
-            return str(value).strip()
-    return ""
+    value = album_data.get(COVER_PROMPT_KEY, "")
+    return str(value).strip() if value and str(value).strip() else ""
 
 
-# Combines Gemini's cover prompt with the selected genre's visual style.
+def _get_genre_style(genre: str) -> str:
+    return GENRE_STYLES.get((genre or "").strip(), "artistic album cover")
+
+
+# Combines Gemini's cover prompt with the chosen genre style description.
 def build_full_prompt(cover_prompt: str, genre: str) -> str:
-    style = GENRE_STYLES.get(normalize_genre(genre), "artistic album cover")
-    return f"{cover_prompt}, {style}, square format, high quality"
+    genre_style = _get_genre_style(genre)
+    return f"{cover_prompt}, {genre_style}, square format, high quality"
+
 
 # Fetches album cover art from Pollinations.ai. Returns None on network or parse errors.
 def generate_cover_image(cover_prompt: str, genre: str) -> Optional[Image.Image]:
@@ -82,7 +61,7 @@ def get_album_cover(cover_prompt: str, genre: str) -> Image.Image:
     return image if image is not None else get_placeholder_image()
 
 
-# Builds cover from parsed Gemini metadata and the genre selected in the GUI.
+# Builds cover from parsed Gemini metadata.
 # Workflow: cover = get_album_cover_from_data(album_data, genre)
 #           result_panel.set_cover_image(cover)  # main thread via root.after
 #           save_album(album_data, cover, folder_path)  # core.exporter

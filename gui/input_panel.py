@@ -1,10 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
 
-from services.image_service import PROJECT_GENRES
-
 MIN_TRACKS = 6
 MAX_TRACKS = 14
+PROJECT_GENRES = [
+    "Pop", "Rock", "Hip-Hop / Rap", "Electronic", "Indie",
+    "R&B / Soul", "Jazz", "Metal", "Türk Pop", "Klasik",
+]
 
 
 class InputPanel(tk.Frame):

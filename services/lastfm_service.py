@@ -1,14 +1,21 @@
 import requests
-from config import LASTFM_API_KEY
 
 
 LASTFM_BASE_URL = "https://ws.audioscrobbler.com/2.0/"
-MAX_TAG_PAGES = 5
+MAX_TAG_PAGES = 3
+LASTFM_API_KEY = None
+
+
+def configure_lastfm(api_key: str) -> None:
+    global LASTFM_API_KEY
+    LASTFM_API_KEY = api_key
 
 
 
 def fetch_tracks_by_tag(tag: str, limit: int = 50, page: int = 1) -> list[dict]:
-   
+    if not LASTFM_API_KEY:
+        raise RuntimeError("Last.fm API key is not configured.")
+
     params = {
         "method":  "tag.gettoptracks",
         "tag":     tag,
@@ -139,6 +146,9 @@ def build_tracklist(tags: list[str], track_count: int, genre: str = "") -> list[
 
 
 if __name__ == "__main__":
+    import os
+
+    configure_lastfm(os.environ.get("LASTFM_API_KEY", ""))
 
     test_tags = ["melancholy", "rainy day", "indie"]
     result = build_tracklist(test_tags, track_count=8, genre="Indie")

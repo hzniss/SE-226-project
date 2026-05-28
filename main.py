@@ -4,7 +4,7 @@ import os
 
 def configure_app() -> None:
     """Load API keys from config.py and/or environment variables."""
-    from services import gemini_service
+    from services import gemini_service, lastfm_service
 
     gemini_key = os.environ.get("GEMINI_API_KEY")
     try:
@@ -36,6 +36,8 @@ def configure_app() -> None:
             "Last.fm API key missing. Set LASTFM_API_KEY in the environment "
             "or add LASTFM_API_KEY to config.py (see config.example.py)."
         )
+
+    lastfm_service.configure_lastfm(lastfm_key)
 
 
 def main() -> None:

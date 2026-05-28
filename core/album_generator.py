@@ -6,6 +6,8 @@ REQ 9 (akış kısmı): Gemini metadata üretimi, Last.fm şarkı çekme ve kapa
 Bu modül app.py içindeki WorkerThread tarafından arka plan thread'inde çağrılır.
 """
 
+from concurrent.futures import ThreadPoolExecutor
+
 from PIL import Image
 
 from services import gemini_service
@@ -53,13 +55,13 @@ def generate_full_album(
         track_count=track_count,
     )
 
-    # 2) Tag'lerden gerçek şarkılarla tracklist oluştur (REQ 1, REQ 5)
-    _status("Fetching tracks...")
+    # 2) Last.fm tracklist ve cover generation adımlarını paralel başlat.
+    _status("Fetching tracks and generating cover...")
     tags = album_data.get("lastfm_tags") or []
-    album_data["tracks"] = build_tracklist(tags, track_count, genre=genre)
-
-    # 3) Kapak görselini üret (REQ 6)
-    _status("Generating cover...")
-    cover = get_album_cover_from_data(album_data, genre)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        tracklist_future = executor.submit(build_tracklist, tags, track_count, genre)
+        cover_future = executor.submit(get_album_cover_from_data, album_data, genre)
+        album_data["tracks"] = tracklist_future.result()
+        cover = cover_future.result()
 
     return album_data, cover

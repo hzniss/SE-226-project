@@ -66,7 +66,6 @@ def save_album(album_data: dict, cover_image: Image.Image, folder_path: str) -> 
         folder = Path(folder_path)
         folder.mkdir(parents=True, exist_ok=True)
 
-        # Dosya adlarını albüm adından üret
         base_name = _safe_filename(album_data.get("album_name", "album"))
         json_path = folder / f"{base_name}.json"
         png_path  = folder / f"{base_name}.png"

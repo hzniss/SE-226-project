@@ -44,7 +44,7 @@ def generate_full_album(
         if status_callback is not None:
             status_callback(msg)
 
-    # 1) Gemini'den albüm metadata'sı + Last.fm tag'leri (REQ 4)
+
     _status("Gemini is thinking...")
     album_data = gemini_service.generate_album_metadata(
         journal_text=journal_text,
@@ -53,12 +53,10 @@ def generate_full_album(
         track_count=track_count,
     )
 
-    # 2) Tag'lerden gerçek şarkılarla tracklist oluştur (REQ 1, REQ 5)
     _status("Fetching tracks...")
     tags = album_data.get("lastfm_tags") or []
     album_data["tracks"] = build_tracklist(tags, track_count, genre=genre)
 
-    # 3) Kapak görselini üret (REQ 6)
     _status("Generating cover...")
     cover = get_album_cover_from_data(album_data, genre)
 

@@ -88,6 +88,7 @@ def _derive_fallback_tags(genre: str) -> list[str]:
     fallback_map = {
         "hip hop rap": ["hip hop", "rap"],
         "r&b soul": ["r&b", "soul"],
+        "türk pop": ["turkish pop", "turkish", "pop"],
         "turk pop": ["turkish pop", "pop"],
         "klasik": ["classical"],
     }

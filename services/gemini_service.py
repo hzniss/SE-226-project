@@ -31,8 +31,19 @@ def strip_markdown_fences(text: str) -> str:
     return text.strip()
 
 
+def _get_tag_guidance(genre: str) -> str:
+    if genre == "Türk Pop":
+        return (
+            '- For "Türk Pop", prioritize Turkish-pop-oriented Last.fm tags such as '
+            '"turkish pop", "turkish", and related Turkish music tags; avoid broad '
+            'international tags unless they are clearly necessary.'
+        )
+    return ""
+
+
 def _build_prompt(journal_text: str, genre: str, era: str, track_count: int) -> str:
     genre_style = GENRE_STYLES.get(genre, "artistic album cover")
+    tag_guidance = _get_tag_guidance(genre)
 
     prompt = f"""You are a creative music curator AI. Based on the journal entry below,
 generate a completely FICTIONAL album concept. The album, artist, year, and label
@@ -55,6 +66,7 @@ Constraints:
 - Tracklist will contain {track_count} real songs fetched separately; do NOT include track names in your JSON.
 - The cover_prompt must be vivid and descriptive, suitable for an AI image generator.
 - lastfm_tags must be real Last.fm tags (e.g. "melancholy", "rainy day", "indie", "dream pop").
+{tag_guidance}
 
 Journal entry:
 \"\"\"{journal_text}\"\"\"

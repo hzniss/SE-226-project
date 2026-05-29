@@ -197,5 +197,4 @@ class ResultPanel(tk.Frame):
         try:
             webbrowser.open(url)
         except Exception:
-            # Sessizce yut: en kötü ihtimalle buton çalışmaz, uygulama çökmez.
             pass

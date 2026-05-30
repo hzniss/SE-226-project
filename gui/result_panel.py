@@ -3,11 +3,17 @@ import webbrowser
 from tkinter import ttk
 
 MAX_TRACKS = 14
+COVER_SIZE = 300
+TRACK_ROW_PADY = 1
+TRACK_FONT = ("Arial", 10)
 
 
 class ResultPanel(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="#EEEFE0")
+        self._cover_photo = None
+        self._resize_after_id = None
+        self._header_pad = 80
 
         style = ttk.Style(self)
         style.configure(
@@ -15,7 +21,7 @@ class ResultPanel(tk.Frame):
             background="#A7C1A8",
             foreground="#ffffff",
             font=("Arial", 9, "bold"),
-            padding=(10, 3),
+            padding=(8, 1),
         )
         style.map(
             "Listen.TButton",
@@ -29,7 +35,7 @@ class ResultPanel(tk.Frame):
             bg="#EEEFE0",
             fg="#819A91",
             font=("Arial", 22, "bold"),
-        ).pack(pady=(30, 5))
+        ).pack(pady=(20, 5))
 
         self.album_info_label = tk.Label(
             self,
@@ -52,9 +58,9 @@ class ResultPanel(tk.Frame):
         self.status_label.pack(pady=(0, 5))
 
         stage = tk.Frame(self, bg="#EEEFE0")
-        stage.pack(expand=True, fill="both", padx=60, pady=20)
+        stage.pack(expand=True, fill="both", padx=60, pady=(8, 12))
 
-        cover_placeholder = tk.Frame(stage, bg="#D1D8BE", width=300, height=300)
+        cover_placeholder = tk.Frame(stage, bg="#D1D8BE", width=COVER_SIZE, height=COVER_SIZE)
         cover_placeholder.pack(side="left", padx=(0, 50))
         cover_placeholder.pack_propagate(False)
         self.cover_label = tk.Label(
@@ -65,7 +71,6 @@ class ResultPanel(tk.Frame):
             font=("Arial", 12, "bold"),
         )
         self.cover_label.pack(expand=True)
-        self._cover_photo = None
 
         tracklist_container = tk.Frame(stage, bg="#EEEFE0")
         tracklist_container.pack(side="left", fill="both", expand=True)
@@ -76,12 +81,12 @@ class ResultPanel(tk.Frame):
             bg="#EEEFE0",
             fg="#819A91",
             font=("Arial", 12, "bold"),
-        ).pack(anchor="w", pady=(0, 12))
+        ).pack(anchor="w", pady=(0, 6))
 
         tracks_frame = tk.Frame(tracklist_container, bg="#EEEFE0")
         tracks_frame.pack(fill="both", expand=True)
-        tracks_frame.columnconfigure(0, weight=1)  # title/artist
-        tracks_frame.columnconfigure(1, weight=0)  # Listen button
+        tracks_frame.columnconfigure(0, weight=1)
+        tracks_frame.columnconfigure(1, weight=0)
 
         self.track_labels: list[tk.Label] = []
         self.track_buttons: list[ttk.Button] = []
@@ -92,10 +97,10 @@ class ResultPanel(tk.Frame):
                 text="",
                 bg="#EEEFE0",
                 fg="#819A91",
-                font=("Arial", 11),
+                font=TRACK_FONT,
                 anchor="w",
             )
-            label.grid(row=row, column=0, sticky="w", pady=4, padx=(0, 8))
+            label.grid(row=row, column=0, sticky="w", pady=TRACK_ROW_PADY, padx=(0, 8))
             self.track_labels.append(label)
 
             btn = ttk.Button(
@@ -104,12 +109,28 @@ class ResultPanel(tk.Frame):
                 style="Listen.TButton",
                 command=lambda url=None: self._open_track_url(url),
             )
-            btn.grid(row=row, column=1, sticky="e", pady=4, padx=(0, 0))
+            btn.grid(row=row, column=1, sticky="e", pady=TRACK_ROW_PADY, padx=(0, 0))
             btn.configure(state="disabled")
             btn.grid_remove()
             self.track_buttons.append(btn)
 
+        self.bind("<Configure>", self._on_panel_resize)
         self._show_empty_tracklist()
+
+    def _on_panel_resize(self, event):
+        if event.widget is not self:
+            return
+        if self._resize_after_id is not None:
+            self.after_cancel(self._resize_after_id)
+        self._resize_after_id = self.after_idle(self._apply_wraplength)
+
+    def _apply_wraplength(self):
+        self._resize_after_id = None
+        width = self.winfo_width()
+        if width > 1:
+            self.album_info_label.configure(
+                wraplength=max(200, width - self._header_pad)
+            )
 
     def _show_empty_tracklist(self):
         for i, label in enumerate(self.track_labels, start=1):
@@ -129,6 +150,7 @@ class ResultPanel(tk.Frame):
         if label:
             header += f"  ·  {label}"
         self.album_info_label.configure(text=header, fg="#4a5a4a", font=("Arial", 12, "bold"))
+        self._apply_wraplength()
 
         if mood:
             self.status_label.configure(text=mood[:200] + ("…" if len(mood) > 200 else ""))
@@ -160,7 +182,7 @@ class ResultPanel(tk.Frame):
     def set_cover_image(self, pil_image):
         from services.image_service import pil_to_tkinter
 
-        self._cover_photo = pil_to_tkinter(pil_image, size=(300, 300))
+        self._cover_photo = pil_to_tkinter(pil_image, size=(COVER_SIZE, COVER_SIZE))
         self.cover_label.configure(image=self._cover_photo, text="")
 
     def clear_cover_image(self):
@@ -190,6 +212,7 @@ class ResultPanel(tk.Frame):
         self.status_label.configure(text="")
         self.clear_cover_image()
         self._show_empty_tracklist()
+        self._apply_wraplength()
 
     def _open_track_url(self, url: str | None):
         if not url:

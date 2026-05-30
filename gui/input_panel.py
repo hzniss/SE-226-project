@@ -14,7 +14,10 @@ class InputPanel(tk.Frame):
         super().__init__(parent, bg="#D1D8BE", height=180, padx=20, pady=20)
         self.pack_propagate(False)
 
+        self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=0)
+        self.rowconfigure(0, weight=1)
 
         settings_frame = tk.Frame(self, bg="#D1D8BE")
         settings_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 20))

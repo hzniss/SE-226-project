@@ -23,7 +23,8 @@ class App(tk.Tk):
         super().__init__()
 
         self.title("Album Cover Studio")
-        self.geometry("1050x700")
+        self.geometry("1050x760")
+        self.minsize(900, 680)
         self.configure(bg="#EEEFE0")
 
         self._last_album_data = None
@@ -33,11 +34,12 @@ class App(tk.Tk):
         style = ttk.Style(self)
         style.theme_use("clam")
 
-        self.result_panel = ResultPanel(self)
-        self.result_panel.pack(side="top", fill="both", expand=True)
-
         self.input_panel = InputPanel(self)
+        self.result_panel = ResultPanel(self)
+
+        # Pack bottom bar first so it always keeps ~180px; result area uses the rest.
         self.input_panel.pack(side="bottom", fill="x")
+        self.result_panel.pack(side="top", fill="both", expand=True)
 
         self.input_panel.generate_btn.configure(command=self._on_generate)
         self.input_panel.export_btn.configure(command=self._on_export)

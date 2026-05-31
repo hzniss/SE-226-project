@@ -77,26 +77,24 @@ class App(tk.Tk):
         ).start()
 
     def _on_generate_success(self, album_data: dict, cover):
-        try:
-            self._last_album_data = album_data
-            self._last_cover = cover
+        self._last_album_data = album_data
+        self._last_cover = cover
 
-            self.result_panel.set_loading(False)
-            self.result_panel.set_album_metadata(album_data)
-            self.result_panel.set_tracklist(album_data.get("tracks") or [])
-            self.result_panel.set_cover_image(cover)
+        self.result_panel.set_loading(False)
+        self.result_panel.set_album_metadata(album_data)
+        self.result_panel.set_tracklist(album_data.get("tracks") or [])
+        self.result_panel.set_cover_image(cover)
 
-            self.input_panel.set_export_enabled(True)
+        self.input_panel.set_export_enabled(True)
+        self._finish_generation()
 
-            tracks = album_data.get("tracks") or []
-            if not tracks:
-                messagebox.showwarning(
-                    "No tracks found",
-                    "Album metadata was created but Last.fm returned no tracks. "
-                    "Check your Last.fm API key in config.py.",
-                )
-        finally:
-            self._finish_generation()
+        tracks = album_data.get("tracks") or []
+        if not tracks:
+            messagebox.showwarning(
+                "No tracks found",
+                "Album metadata was created but Last.fm returned no tracks. "
+                "Check your Last.fm API key in config.py.",
+            )
 
     def _on_generate_error(self, error_message: str):
         self.result_panel.set_loading(False)
